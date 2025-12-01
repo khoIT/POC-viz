@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presight POC Gap Analysis - VNGGames</title>
+    <meta name="description"
+        content="Comprehensive gap analysis of Presight AI BI tools POC for VNGGames internal analytics use case">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --vng-primary: #FF6600;
+            --vng-primary-dark: #CC5200;
+            --vng-secondary: #1a1a2e;
+            --vng-accent: #16213e;
+            --vng-light: #f8f9fa;
+            --vng-gray: #6c757d;
+            --vng-success: #00d4aa;
+            --vng-warning: #ffc107;
+            --vng-danger: #dc3545;
+            --gradient-bg: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            --card-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            --card-shadow-hover: 0 15px 60px rgba(0, 0, 0, 0.35);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--gradient-bg);
+            color: var(--vng-light);
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255, 102, 0, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(0, 212, 170, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff 0%, var(--vng-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 15px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            font-size: 1.3rem;
+            color: #b8b8d1;
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+
+        .poc-duration {
+            display: inline-block;
+            padding: 8px 20px;
+            background: rgba(255, 102, 0, 0.15);
+            border: 1px solid rgba(255, 102, 0, 0.3);
+            border-radius: 30px;
+            color: var(--vng-primary);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 30px;
+            margin-bottom: 50px;
+            animation: fadeIn 1s ease-out 0.2s both;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-shadow-hover);
+            border-color: rgba(255, 102, 0, 0.3);
+        }
+
+        #chart-container {
+            grid-column: 1;
+            height: 700px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
+            border: 2px solid rgba(255, 102, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        #chart-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 102, 0, 0.05) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+
+        #chart {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-card {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 4px solid var(--vng-primary);
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
+            border-left-color: var(--vng-success);
+        }
+
+        .info-item h3 {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            color: var(--vng-primary);
+            font-weight: 700;
+        }
+
+        .info-item ul {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .info-item li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            color: #c9cad6;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .info-item li::before {
+            content: '▸';
+            position: absolute;
+            left: 0;
+            color: var(--vng-primary);
+            font-weight: bold;
+        }
+
+        .gap-section {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            animation: fadeInUp 1s ease-out 0.4s both;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .gap-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 18px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .gap-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--vng-primary), var(--vng-success));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .gap-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .gap-card:hover,
+        .gap-card.active {
+            transform: translateY(-8px);
+            box-shadow: var(--card-shadow-hover);
+            border-color: rgba(255, 102, 0, 0.4);
+        }
+
+        .gap-card.active::before {
+            transform: scaleX(1);
+        }
+
+        .gap-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: #fff;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .gap-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            background: var(--vng-primary);
+            border-radius: 50%;
+            font-size: 0.85rem;
+            font-weight: 800;
+        }
+
+        .gap-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .gap-card li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+            color: #b8b8d1;
+            font-size: 0.93rem;
+            line-height: 1.7;
+        }
+
+        .gap-card li::before {
+            content: '•';
+            position: absolute;
+            left: 8px;
+            color: var(--vng-primary);
+            font-size: 1.3rem;
+            line-height: 1;
+        }
+
+        .nested-list {
+            margin-top: 8px;
+            padding-left: 20px;
+        }
+
+        .nested-list li::before {
+            content: '◦';
+            font-size: 1.1rem;
+        }
+
+        .potential-note {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(0, 212, 170, 0.08);
+            border-left: 3px solid var(--vng-success);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #d1f5ea;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: #8888a8;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            margin-top: 60px;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            #chart-container {
+                grid-column: 1;
+                height: 550px;
+            }
+
+            .control-panel {
+                grid-column: 1;
+                position: relative;
+                top: 0;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 1.1rem;
+            }
+
+            .gap-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.2rem;
+            color: var(--vng-primary);
+        }
+
+        /* Control Panel Styles */
+        .control-panel {
+            grid-column: 2;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            animation: fadeIn 1s ease-out 0.4s both;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .control-panel h2 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #fff;
+            font-weight: 700;
+            text-align: center;
+            background: linear-gradient(135deg, #fff 0%, var(--vng-primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .slider-container {
+            margin-bottom: 12px;
+        }
+
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #b8b8d1;
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+
+        .slider-name {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 45px;
+            text-align: right;
+            color: var(--vng-primary);
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            outline: none;
+            -webkit-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--vng-primary);
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(255, 102, 0, 0.5);
+            transition: all 0.3s ease;
+            margin-top: -5px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.8);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--vng-primary);
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(255, 102, 0, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.8);
+        }
+
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            border-radius: 4px;
+            background: linear-gradient(to right,
+                    rgba(255, 102, 0, 0.3) 0%,
+                    var(--vng-primary) var(--slider-percentage, 50%),
+                    rgba(255, 255, 255, 0.1) var(--slider-percentage, 50%));
+        }
+
+        .reset-button {
+            width: 100%;
+            padding: 12px 24px;
+            margin-top: 10px;
+            background: linear-gradient(135deg, var(--vng-primary) 0%, var(--vng-primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 102, 0, 0.3);
+        }
+
+        .reset-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 102, 0, 0.5);
+        }
+
+        .reset-button:active {
+            transform: translateY(0);
+        }
+
+        /* Toggle Button */
+        .panel-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 102, 0, 0.2);
+            border: 1px solid rgba(255, 102, 0, 0.4);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .panel-toggle:hover {
+            background: rgba(255, 102, 0, 0.3);
+            transform: scale(1.05);
+        }
+
+        .panel-toggle::before {
+            content: '⚙️';
+            font-size: 1.2rem;
+        }
+
+        .control-panel.collapsed {
+            transform: translateX(calc(100% + 30px));
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .control-panel {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sliders-content {
+            max-height: 1000px;
+            opacity: 1;
+            transition: all 0.4s ease;
+        }
+
+        .control-panel.collapsed .sliders-content {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h2>Presight POC Feedback</h2>
+            <p class="subtitle">VNGGames × Presight Evaluation</p>
+            <div class="poc-duration">POC Duration: 2 months</div>
+        </header>
+
+        <div class="main-content">
+            <div class="card" id="chart-container">
+                <div class="loading">Loading chart...</div>
+                <div id="chart"></div>
+            </div>
+
+            <button class="panel-toggle" id="panel-toggle" title="Toggle Settings Panel"></button>
+
+            <div class="control-panel" id="control-panel">
+                <h2>⚙️ Score Adjuster</h2>
+                <div class="sliders-content">
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span class="slider-name">Data Layer Readiness</span>
+                            <span class="slider-value" id="value-0">4</span>
+                        </div>
+                        <input type="range" id="slider-0" min="0" max="10" value="4" step="1">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span class="slider-name">Operational Efficiency</span>
+                            <span class="slider-value" id="value-1">3</span>
+                        </div>
+                        <input type="range" id="slider-1" min="0" max="10" value="3" step="1">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span class="slider-name">BI Visualization</span>
+                            <span class="slider-value" id="value-2">7</span>
+                        </div>
+                        <input type="range" id="slider-2" min="0" max="10" value="5" step="1">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span class="slider-name">Research Insight Depth</span>
+                            <span class="slider-value" id="value-3">6</span>
+                        </div>
+                        <input type="range" id="slider-3" min="0" max="10" value="6" step="1">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label">
+                            <span class="slider-name">Instant, Accurate Answers</span>
+                            <span class="slider-value" id="value-4">10</span>
+                        </div>
+                        <input type="range" id="slider-4" min="0" max="10" value="10" step="1">
+                    </div>
+                    <button class="reset-button" id="reset-button">🔄 Reset to Original Values</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="gap-section">
+            <div class="gap-card" id="card-data">
+                <h3><span class="gap-number">1</span> Data Layer Readiness</h3>
+                <ul>
+                    <li>The biggest workload and bottleneck surfaced during the POC came from our internal data
+                        foundations, not from Presight's tool.</li>
+                    <li>Our DA/DE teams still need more time to standardize datasets, metrics, and pipelines before
+                        adopting any advanced BI/AI tool.</li>
+                </ul>
+            </div>
+
+            <div class="gap-card" id="card-ops">
+                <h3><span class="gap-number">2</span> Operational Overhead</h3>
+                <ul>
+                    <li>Adopting Presight would introduce additional ongoing workload (semantic/metrics maintenance,
+                        user support) that current capacity cannot absorb.</li>
+                </ul>
+            </div>
+
+            <div class="gap-card" id="card-bi">
+                <h3><span class="gap-number">3</span> BI Capabilities Not Fully Aligned</h3>
+                <ul>
+                    <li>From a pure BI perspective, we need more advanced visualization & dashboard-building
+                        capabilities comparable to:
+                        <ul class="nested-list">
+                            <li>Tableau</li>
+                            <li>ThinkingData</li>
+                            <li>Superset (custom)</li>
+                        </ul>
+                    </li>
+                    <li>Current Presight BI interfaces do not yet match the flexibility and configurability required for
+                        our game operations dashboards.</li>
+                </ul>
+            </div>
+
+            <div class="gap-card" id="card-ai">
+                <h3><span class="gap-number">4</span> AI Insights Not Deep Enough Yet</h3>
+                <ul>
+                    <li>From an AI insights perspective, the generated insights are not yet at the depth or automation
+                        level required by our domain experts.</li>
+                    <li>Insights still require manual interpretation, post-processing, or domain-specific context to be
+                        actionable.</li>
+                </ul>
+                <div class="potential-note">
+                    <strong>✓ Positive note:</strong> We see strong potential in Presight's direction and look forward
+                    to a step-change improvement that would justify augmenting existing analytical workflows.
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>VNGGames Analytics Team • Presight POC Conclusion • December 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // Initialize chart
+        var chartDom = document.getElementById('chart');
+        var myChart = echarts.init(chartDom);
+
+        // Hide loading message
+        document.querySelector('.loading').style.display = 'none';
+
+        // Original values for reset
+        const originalValues = [4, 3, 5, 6, 10];
+
+        // Current POC values
+        let pocValues = [...originalValues];
+
+        var option = {
+            title: {
+                text: 'POC Evaluation Matrix',
+                left: 'center',
+                top: '25px',
+                textStyle: {
+                    color: '#ffffff',
+                    fontSize: 26,
+                    fontWeight: 'bold',
+                    fontFamily: 'Inter'
+                },
+                subtextStyle: {
+                    color: '#b8b8d1',
+                    fontSize: 14,
+                    fontFamily: 'Inter'
+                }
+            },
+            legend: {
+                data: ['VNG Target Requirement', 'POC Outcome (Current State)'],
+                bottom: '25px',
+                textStyle: {
+                    color: '#ffffff',
+                    fontSize: 13,
+                    fontFamily: 'Inter',
+                    padding: [0, 0, 0, 5]
+                },
+                itemWidth: 25,
+                itemHeight: 14,
+                itemGap: 50
+            },
+            radar: {
+                indicator: [
+                    { name: 'Data Layer Readiness\n(Internal Foundation)', max: 10 },
+                    { name: 'Operational Efficiency\n(Semantic & Metrics Layer)', max: 10 },
+                    { name: 'BI Visualization', max: 10 },
+                    { name: 'Research Insight Depth', max: 10 },
+                    { name: 'Instant, Accurate,\nVerifiable Answers', max: 10 }
+                ],
+                radius: '58%',
+                center: ['50%', '52%'],
+                axisName: {
+                    color: '#ffffff',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    borderRadius: 6,
+                    padding: [12, 16],
+                    lineHeight: 20,
+                    fontSize: 12,
+                    fontWeight: '600',
+                    fontFamily: 'Inter',
+                    triggerEvent: true
+                },
+                splitArea: {
+                    areaStyle: {
+                        color: ['rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.04)']
+                    }
+                },
+                axisLine: {
+                    lineStyle: {
+                        color: 'rgba(255, 255, 255, 0.15)'
+                    }
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: 'rgba(255, 255, 255, 0.15)'
+                    }
+                }
+            },
+            series: [
+                {
+                    name: 'POC Assessment',
+                    type: 'radar',
+                    emphasis: {
+                        lineStyle: {
+                            width: 4
+                        }
+                    },
+                    data: [
+                        {
+                            value: [10, 10, 10, 10, 10],
+                            name: 'VNG Target Requirement',
+                            itemStyle: {
+                                color: '#B0B0B0'
+                            },
+                            lineStyle: {
+                                type: 'dashed',
+                                width: 2,
+                                color: '#B0B0B0'
+                            },
+                            areaStyle: {
+                                opacity: 0.12,
+                                color: 'rgba(176, 176, 176, 0.2)'
+                            },
+                            symbolSize: 6
+                        },
+                        {
+                            value: pocValues,
+                            name: 'POC Outcome (Current State)',
+                            itemStyle: {
+                                color: '#FF6600',
+                                borderWidth: 2,
+                                borderColor: '#fff'
+                            },
+                            lineStyle: {
+                                width: 3,
+                                color: '#FF6600'
+                            },
+                            areaStyle: {
+                                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                                    { offset: 0, color: 'rgba(255, 102, 0, 0.7)' },
+                                    { offset: 1, color: 'rgba(255, 102, 0, 0.15)' }
+                                ])
+                            },
+                            symbolSize: 8
+                        }
+                    ]
+                }
+            ],
+            tooltip: {
+                trigger: 'item',
+                backgroundColor: 'rgba(26, 26, 46, 0.95)',
+                borderColor: 'rgba(255, 102, 0, 0.5)',
+                borderWidth: 1,
+                textStyle: {
+                    color: '#ffffff',
+                    fontFamily: 'Inter'
+                },
+                formatter: function (params) {
+                    if (params.value) {
+                        const indicators = [
+                            'Data Layer Readiness',
+                            'Operational Efficiency',
+                            'BI Visualization',
+                            'AI Insight Depth',
+                            'Instant, Accurate Answers'
+                        ];
+                        let result = `<strong>${params.name}</strong><br/>`;
+                        params.value.forEach((val, idx) => {
+                            result += `${indicators[idx]}: <strong>${val}/10</strong><br/>`;
+                        });
+                        return result;
+                    }
+                }
+            }
+        };
+
+        myChart.setOption(option);
+
+        // Map indicators to card IDs
+        const indicatorMap = {
+            'Data Layer Readiness\n(Internal Foundation)': 'card-data',
+            'Operational Efficiency\n(Semantic & Metrics Layer)': 'card-ops',
+            'BI Visualization': 'card-bi',
+            'Research Insight Depth': 'card-ai'
+        };
+
+        // Add event listeners for click on axis labels using ZRender (lower level)
+        myChart.getZr().on('click', function (params) {
+            if (params.target && params.target.style && params.target.style.text) {
+                const text = params.target.style.text;
+                let cardId = null;
+
+                // Check if the clicked text matches our indicators
+                if (text.includes('Data Layer Readiness')) cardId = 'card-data';
+                else if (text.includes('Operational Efficiency')) cardId = 'card-ops';
+                else if (text.includes('BI Visualization')) cardId = 'card-bi';
+                else if (text.includes('Insight Depth')) cardId = 'card-ai';
+
+                if (cardId) {
+                    const card = document.getElementById(cardId);
+                    if (card) {
+                        // Remove active from all others
+                        document.querySelectorAll('.gap-card').forEach(c => c.classList.remove('active'));
+
+                        // Add active class
+                        card.classList.add('active');
+
+                        // Scroll into view smoothly
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                } else {
+                    // If clicked text is not one of ours (or if clicked elsewhere on canvas), remove active
+                    // But we might want to keep it if clicking other things. 
+                    // Let's rely on the document click listener for clearing.
+                }
+            }
+        });
+
+        // Change cursor to pointer when hovering over clickable axis labels
+        myChart.getZr().on('mousemove', function (params) {
+            let isHoveringText = false;
+            if (params.target && params.target.style && params.target.style.text) {
+                const text = params.target.style.text;
+                if (text.includes('Data Layer Readiness') ||
+                    text.includes('Operational Efficiency') ||
+                    text.includes('BI Visualization') ||
+                    text.includes('Insight Depth')) {
+                    isHoveringText = true;
+                }
+            }
+
+            if (isHoveringText) {
+                myChart.getZr().setCursorStyle('pointer');
+            } else {
+                myChart.getZr().setCursorStyle('default');
+            }
+        });
+
+        // Remove the high-level mouseover/mouseout as we are handling cursor manually now
+        // and click is handled via getZr()
+
+        // Remove active class when clicking outside
+        document.addEventListener('click', function (e) {
+            // If click is not on the chart
+            if (!document.getElementById('chart').contains(e.target)) {
+                document.querySelectorAll('.gap-card').forEach(c => c.classList.remove('active'));
+            }
+        });
+
+        // Responsive resize
+        window.addEventListener('resize', function () {
+            myChart.resize();
+        });
+
+        // Add subtle animation on load
+        setTimeout(() => {
+            myChart.dispatchAction({
+                type: 'highlight',
+                seriesIndex: 0,
+                dataIndex: 1
+            });
+
+            setTimeout(() => {
+                myChart.dispatchAction({
+                    type: 'downplay',
+                    seriesIndex: 0,
+                    dataIndex: 1
+                });
+            }, 2000);
+        }, 500);
+
+        // Function to update chart
+        function updateChart() {
+            option.series[0].data[1].value = pocValues;
+            myChart.setOption(option);
+        }
+
+        // Add event listeners to sliders
+        for (let i = 0; i < 5; i++) {
+            const slider = document.getElementById(`slider-${i}`);
+            const valueDisplay = document.getElementById(`value-${i}`);
+
+            slider.addEventListener('input', function () {
+                const value = parseInt(this.value);
+                pocValues[i] = value;
+                valueDisplay.textContent = value;
+                updateChart();
+
+                // Update slider track gradient
+                const percentage = (value / 10) * 100;
+                this.style.setProperty('--slider-percentage', `${percentage}%`);
+            });
+
+            // Initialize slider color
+            const percentage = (pocValues[i] / 10) * 100;
+            slider.style.setProperty('--slider-percentage', `${percentage}%`);
+        }
+
+        // Reset button functionality
+        document.getElementById('reset-button').addEventListener('click', function () {
+            pocValues = [...originalValues];
+            for (let i = 0; i < 5; i++) {
+                const slider = document.getElementById(`slider-${i}`);
+                const valueDisplay = document.getElementById(`value-${i}`);
+                slider.value = originalValues[i];
+                valueDisplay.textContent = originalValues[i];
+
+                // Update slider track gradient
+                const percentage = (originalValues[i] / 10) * 100;
+                slider.style.setProperty('--slider-percentage', `${percentage}%`);
+            }
+            updateChart();
+
+            // Visual feedback
+            this.textContent = '✅ Reset Complete!';
+            setTimeout(() => {
+                this.textContent = '🔄 Reset to Original Values';
+            }, 1500);
+        });
+
+        // Toggle panel functionality
+        document.getElementById('panel-toggle').addEventListener('click', function () {
+            const panel = document.getElementById('control-panel');
+            panel.classList.toggle('collapsed');
+        });
+
+        // Map slider indices to card IDs
+        const sliderToCardMap = {
+            0: 'card-data',      // Data Layer Readiness
+            1: 'card-ops',       // Operational Efficiency
+            2: 'card-bi',        // BI Visualization
+            3: 'card-ai',        // Research Insight Depth
+            4: null              // Instant, Accurate Answers (no corresponding card)
+        };
+
+        // Add hover synchronization between sliders and gap cards
+        const sliderContainers = document.querySelectorAll('.slider-container');
+        sliderContainers.forEach((container, index) => {
+            const cardId = sliderToCardMap[index];
+
+            if (cardId) {
+                const card = document.getElementById(cardId);
+
+                if (card) {
+                    // When mouse enters the slider container, highlight the corresponding card
+                    container.addEventListener('mouseenter', function () {
+                        card.classList.add('active');
+                    });
+
+                    // When mouse leaves the slider container, remove the highlight
+                    container.addEventListener('mouseleave', function () {
+                        card.classList.remove('active');
+                    });
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>
