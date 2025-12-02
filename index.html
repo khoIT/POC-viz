@@ -752,7 +752,7 @@
                 }
             },
             legend: {
-                data: ['VNG Target Requirement', 'POC Outcome (Current State)'],
+                data: ['VNGGames Goal', 'POC Outcome (Current State)'],
                 bottom: '25px',
                 textStyle: {
                     color: '#ffffff',
@@ -783,7 +783,20 @@
                     fontSize: 12,
                     fontWeight: '600',
                     fontFamily: 'Inter',
-                    triggerEvent: true
+                    triggerEvent: true,
+                    formatter: function (value) {
+                        // Emphasize "Data Layer Readiness" in orange (VNG's responsibility)
+                        if (value.includes('Data Layer Readiness')) {
+                            return '{orange|' + value + '}';
+                        }
+                        return value;
+                    },
+                    rich: {
+                        orange: {
+                            color: '#FF6600',
+                            fontWeight: '700'
+                        }
+                    }
                 },
                 splitArea: {
                     areaStyle: {
@@ -813,7 +826,7 @@
                     data: [
                         {
                             value: [10, 10, 10, 10, 10],
-                            name: 'VNG Target Requirement',
+                            name: 'VNGGames Goal',
                             itemStyle: {
                                 color: '#B0B0B0'
                             },
